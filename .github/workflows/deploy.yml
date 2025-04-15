@@ -5,13 +5,14 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     env:
       AZURE_VM_IP: ${{ secrets.AZURE_VM_IP }}
       AZURE_USERNAME: ${{ secrets.AZURE_USERNAME }}
       PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+      REMOTE_APP_DIR: "~/Task_manager_API" # this is the existing application code directory
 
     steps:
     - name: Checkout code
@@ -20,24 +21,24 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-   # - name: Run tests
-   #   run: npm test
+    # - name: Run tests
+    #   run: npm test 
 
-    - name: Deploy to Azure VM
+    - name: Deploy new code to Azure VM
       uses: appleboy/scp-action@master
       with:
         host: ${{ env.AZURE_VM_IP }}
         username: ${{ env.AZURE_USERNAME }}
         key: ${{ env.PRIVATE_KEY }}
         source: "."
-        target: "~/task-manager"
+        target: ${{ env.REMOTE_APP_DIR }}
 
-    - name: SSH and Restart App
+    - name: SSH and Restart Existing App
       uses: appleboy/ssh-action@master
       with:
         host: ${{ env.AZURE_VM_IP }}
         username: ${{ env.AZURE_USERNAME }}
         key: ${{ env.PRIVATE_KEY }}
         script: |
-          cd ~/task-manager
-          pm2 restart app || pm2 start app.js --name app
+          cd ${{ env.REMOTE_APP_DIR }}
+          pm2 restart app
